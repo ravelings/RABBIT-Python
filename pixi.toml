@@ -1,0 +1,17 @@
+[workspace]
+authors = ["ravelings <chowemmeline@gmail.com>"]
+channels = ["conda-forge"]
+name = "RABBIT-Python"
+platforms = ["win-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+pinocchio = ">=4.1.0,<5"
+casadi = ">=3.7.2,<4"
+numpy = ">=2.5.2,<3"
+python = "3.12.*"
+mujoco-python = ">=3.10.0,<4"
+pybind11-stubgen = ">=2.5.5,<3"
+matplotlib = ">=3.11.1,<4"

@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<!--
+  RABBIT - stance-rooted model (5 DOF), single support phase.
+  Same Table 2 parameters as rabbit_floating.urdf, kinematic tree re-rooted
+  at the stance leg end so that D(q) qdd + C(q,qdot) qdot + G(q) = B u
+  is eq. (4) of the paper directly, with no constraint elimination.
+
+  Chain: world -(StanceAnkle)- StanceShin -(StanceKnee)- StanceThigh
+         -(StanceHip)- Torso -(SwingHip)- SwingThigh -(SwingKnee)- SwingShin
+
+  Configuration ordering (nq = nv = 5):
+      [ q_StanceAnkle, q_StanceKnee, q_StanceHip, q_SwingHip, q_SwingKnee ]
+
+  StanceAnkle is UNACTUATED - this is the one degree of underactuation.
+  B is therefore 5x4: rows 2..5 of the identity.
+
+  NOTE ON SIGNS: the stance leg is traversed distal-to-proximal here, the
+  opposite of rabbit_floating.urdf. Stance joint angles are therefore NOT
+  numerically equal to the corresponding floating-base angles. The mapping
+  must be written down and tested, not assumed. #tentative
+-->
+<robot name="rabbit_stance">
+
+  <link name="world"/>
+
+  <!-- Stance tibia: frame origin AT THE CONTACT POINT, extends +0.4 in z
+       to the knee. COM is 0.24 below the knee = 0.16 above the foot. -->
+  <link name="StanceShin">
+    <inertial>
+      <origin xyz="0 0 0.16" rpy="0 0 0"/>
+      <mass value="3.2"/>
+      <inertia ixx="0.2" ixy="0" ixz="0" iyy="0.2" iyz="0" izz="0.2"/>
+    </inertial>
+  </link>
+
+  <!-- Stance femur: frame origin at knee, extends +0.4 in z to the hip.
+       COM is 0.11 below the hip = 0.29 above the knee. -->
+  <link name="StanceThigh">
+    <inertial>
+      <origin xyz="0 0 0.29" rpy="0 0 0"/>
+      <mass value="6.8"/>
+      <inertia ixx="0.47" ixy="0" ixz="0" iyy="0.47" iyz="0" izz="0.47"/>
+    </inertial>
+  </link>
+
+  <link name="Torso">
+    <inertial>
+      <origin xyz="0 0 0.24" rpy="0 0 0"/>
+      <mass value="12.0"/>
+      <inertia ixx="1.33" ixy="0" ixz="0" iyy="1.33" iyz="0" izz="1.33"/>
+    </inertial>
+  </link>
+
+  <link name="SwingThigh">
+    <inertial>
+      <origin xyz="0 0 -0.11" rpy="0 0 0"/>
+      <mass value="6.8"/>
+      <inertia ixx="0.47" ixy="0" ixz="0" iyy="0.47" iyz="0" izz="0.47"/>
+    </inertial>
+  </link>
+
+  <link name="SwingShin">
+    <inertial>
+      <origin xyz="0 0 -0.24" rpy="0 0 0"/>
+      <mass value="3.2"/>
+      <inertia ixx="0.2" ixy="0" ixz="0" iyy="0.2" iyz="0" izz="0.2"/>
+    </inertial>
+  </link>
+
+  <link name="SwingFoot"/>
+
+  <!-- Unactuated pivot at the stance contact point. -->
+  <joint name="StanceAnkle" type="revolute">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <parent link="world"/>
+    <child  link="StanceShin"/>
+    <limit lower="-3.15" upper="3.15" effort="0" velocity="100"/>
+  </joint>
+
+  <joint name="StanceKnee" type="revolute">
+    <origin xyz="0 0 0.4" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <parent link="StanceShin"/>
+    <child  link="StanceThigh"/>
+    <limit lower="-3.15" upper="3.15" effort="35" velocity="8.4"/>
+  </joint>
+
+  <joint name="StanceHip" type="revolute">
+    <origin xyz="0 0 0.4" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <parent link="StanceThigh"/>
+    <child  link="Torso"/>
+    <limit lower="-3.15" upper="3.15" effort="35" velocity="8.4"/>
+  </joint>
+
+  <joint name="SwingHip" type="revolute">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <parent link="Torso"/>
+    <child  link="SwingThigh"/>
+    <limit lower="-3.15" upper="3.15" effort="35" velocity="8.4"/>
+  </joint>
+
+  <joint name="SwingKnee" type="revolute">
+    <origin xyz="0 0 -0.4" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <parent link="SwingThigh"/>
+    <child  link="SwingShin"/>
+    <limit lower="-3.15" upper="3.15" effort="35" velocity="8.4"/>
+  </joint>
+
+  <joint name="SwingFootFixed" type="fixed">
+    <origin xyz="0 0 -0.4" rpy="0 0 0"/>
+    <parent link="SwingShin"/>
+    <child  link="SwingFoot"/>
+  </joint>
+
+</robot>

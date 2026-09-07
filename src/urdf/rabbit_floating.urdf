@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+<!--
+  RABBIT - planar floating-base model (7 DOF)
+  Parameters: Chevallereau et al., IEEE Control Systems Magazine, Oct 2003, Table 2.
+  Sagittal plane is XZ; all revolute axes are +Y.
+
+  Configuration ordering (nq = nv = 7):
+      [ x_H, z_H, q_torso, q_LeftHip, q_LeftKnee, q_RightHip, q_RightKnee ]
+  which matches the ordering of the original MATLAB state vector.
+
+  #locked   : link lengths, masses, iyy, COM offsets (from Table 2)
+  #tentative: joint limits, effort/velocity limits, ixx/izz padding
+-->
+<robot name="rabbit_floating">
+
+  <!-- ================= planar floating base ================= -->
+  <!-- 3 DOF: translate x, translate z, rotate about y.
+       Massless dummy links; these are the "virtual" joints only. -->
+
+  <link name="world"/>
+
+  <link name="base_x">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <link name="base_z">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="base_slide_x" type="prismatic">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <parent link="world"/>
+    <child  link="base_x"/>
+    <limit lower="-100" upper="100" effort="0" velocity="100"/>
+  </joint>
+
+  <joint name="base_slide_z" type="prismatic">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <parent link="base_x"/>
+    <child  link="base_z"/>
+    <limit lower="-100" upper="100" effort="0" velocity="100"/>
+  </joint>
+
+  <!-- q_torso: torso pitch w.r.t. vertical (paper's q1) -->
+  <joint name="base_pitch_y" type="revolute">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <parent link="base_z"/>
+    <child  link="Torso"/>
+    <limit lower="-3.15" upper="3.15" effort="0" velocity="100"/>
+  </joint>
+
+  <!-- ================= links ================= -->
+  <!-- Torso frame origin is at the hip axis; torso extends +0.625 in +z.
+       COM 0.24 m above the hip. -->
+  <link name="Torso">
+    <inertial>
+      <origin xyz="0 0 0.24" rpy="0 0 0"/>
+      <mass value="12.0"/>
+      <inertia ixx="1.33" ixy="0" ixz="0" iyy="1.33" iyz="0" izz="1.33"/>
+    </inertial>
+  </link>
+
+  <!-- Femur: frame origin at hip, extends -0.4 in z, COM 0.11 below hip. -->
+  <link name="LeftThigh">
+    <inertial>
+      <origin xyz="0 0 -0.11" rpy="0 0 0"/>
+      <mass value="6.8"/>
+      <inertia ixx="0.47" ixy="0" ixz="0" iyy="0.47" iyz="0" izz="0.47"/>
+    </inertial>
+  </link>
+
+  <!-- Tibia: frame origin at knee, extends -0.4 in z, COM 0.24 below knee. -->
+  <link name="LeftShin">
+    <inertial>
+      <origin xyz="0 0 -0.24" rpy="0 0 0"/>
+      <mass value="3.2"/>
+      <inertia ixx="0.2" ixy="0" ixz="0" iyy="0.2" iyz="0" izz="0.2"/>
+    </inertial>
+  </link>
+
+  <link name="RightThigh">
+    <inertial>
+      <origin xyz="0 0 -0.11" rpy="0 0 0"/>
+      <mass value="6.8"/>
+      <inertia ixx="0.47" ixy="0" ixz="0" iyy="0.47" iyz="0" izz="0.47"/>
+    </inertial>
+  </link>
+
+  <link name="RightShin">
+    <inertial>
+      <origin xyz="0 0 -0.24" rpy="0 0 0"/>
+      <mass value="3.2"/>
+      <inertia ixx="0.2" ixy="0" ixz="0" iyy="0.2" iyz="0" izz="0.2"/>
+    </inertial>
+  </link>
+
+  <!-- Massless leg-end bodies. Pinocchio collapses fixed joints into
+       operational frames named LeftFoot / RightFoot. These are the point
+       contacts: the guard y2(q)=0 and the impact map both key off them. -->
+  <link name="LeftFoot"/>
+  <link name="RightFoot"/>
+
+  <!-- ================= actuated joints ================= -->
+  <joint name="LeftHip" type="revolute">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <parent link="Torso"/>
+    <child  link="LeftThigh"/>
+    <limit lower="-3.15" upper="3.15" effort="35" velocity="8.4"/>
+  </joint>
+
+  <joint name="LeftKnee" type="revolute">
+    <origin xyz="0 0 -0.4" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <parent link="LeftThigh"/>
+    <child  link="LeftShin"/>
+    <limit lower="-3.15" upper="3.15" effort="35" velocity="8.4"/>
+  </joint>
+
+  <joint name="RightHip" type="revolute">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <parent link="Torso"/>
+    <child  link="RightThigh"/>
+    <limit lower="-3.15" upper="3.15" effort="35" velocity="8.4"/>
+  </joint>
+
+  <joint name="RightKnee" type="revolute">
+    <origin xyz="0 0 -0.4" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <parent link="RightThigh"/>
+    <child  link="RightShin"/>
+    <limit lower="-3.15" upper="3.15" effort="35" velocity="8.4"/>
+  </joint>
+
+  <joint name="LeftFootFixed" type="fixed">
+    <origin xyz="0 0 -0.4" rpy="0 0 0"/>
+    <parent link="LeftShin"/>
+    <child  link="LeftFoot"/>
+  </joint>
+
+  <joint name="RightFootFixed" type="fixed">
+    <origin xyz="0 0 -0.4" rpy="0 0 0"/>
+    <parent link="RightShin"/>
+    <child  link="RightFoot"/>
+  </joint>
+
+  <!-- ================= transmissions =================
+       NOT read by Pinocchio. Kept for ROS tooling only.
+       Reflected rotor inertia must be set in Python via model.armature. -->
+  <transmission name="LeftHip_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="LeftHip"/><actuator name="LeftHip_motor"/>
+    <mechanicalReduction>50</mechanicalReduction>
+  </transmission>
+  <transmission name="LeftKnee_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="LeftKnee"/><actuator name="LeftKnee_motor"/>
+    <mechanicalReduction>50</mechanicalReduction>
+  </transmission>
+  <transmission name="RightHip_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="RightHip"/><actuator name="RightHip_motor"/>
+    <mechanicalReduction>50</mechanicalReduction>
+  </transmission>
+  <transmission name="RightKnee_trans" type="pr2_mechanism_model/SimpleTransmission">
+    <joint name="RightKnee"/><actuator name="RightKnee_motor"/>
+    <mechanicalReduction>50</mechanicalReduction>
+  </transmission>
+
+</robot>

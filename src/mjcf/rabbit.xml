@@ -1,0 +1,135 @@
+<?xml version="1.0"?>
+<!--
+  RABBIT - planar five-link walker, MJCF companion to rabbit_floating.urdf
+  Parameters: Chevallereau et al., IEEE Control Systems Magazine, Oct 2003, Table 2.
+  Sagittal plane is XZ; all revolute axes are +Y.
+
+  qpos / qvel ordering (nq = nv = 7), identical to the Pinocchio model:
+      [ x_H, z_H, q_torso, q_LeftHip, q_LeftKnee, q_RightHip, q_RightKnee ]
+
+  Torso body pos is (0,0,0) on purpose: qpos[1] is then the absolute hip
+  height in world coordinates, so q vectors transfer between Pinocchio and
+  MuJoCo with no offset. Initial standing pose lives in <keyframe> instead.
+-->
+<mujoco model="rabbit">
+
+  <!-- inertiafromgeom="false" forces every body to carry an explicit
+       <inertial>. Without it MuJoCo silently recomputes inertia from the
+       geoms and the two models drift apart. -->
+  <compiler angle="radian" autolimits="true" inertiafromgeom="false"/>
+
+  <option timestep="5e-4" integrator="implicitfast" gravity="0 0 -9.81"
+          cone="elliptic" impratio="10"/>
+
+  <default>
+    <!-- Link geoms are visual only: contype/conaffinity 0 disables all
+         self-collision and any leg/floor contact except at the feet. -->
+    <geom type="capsule" size="0.02" contype="0" conaffinity="0"
+          rgba="0.55 0.6 0.68 1"/>
+
+    <default class="foot">
+      <!-- Point feet. The sphere is offset up by exactly its radius (see
+           pos="0 0 -0.39") so its lowest point lands on the ideal contact
+           point at z=-0.4. Without that the MuJoCo guard fires one radius
+           early and never matches Pinocchio's y2(q)=0.
+           condim="3" gives Coulomb friction; raise friction or go
+           condim="4" if you see slip during stance. -->
+      <geom type="sphere" size="0.010" contype="1" conaffinity="1"
+            condim="3" friction="1.0 0.005 0.0001"
+            solref="0.005 1" solimp="0.95 0.99 0.001"
+            rgba="0.85 0.4 0.3 1"/>
+    </default>
+
+    <default class="leg">
+      <joint type="hinge" axis="0 1 0" damping="0.1"
+             armature="0"/>  <!-- FILL IN: N^2 * I_rotor with N = 50 -->
+    </default>
+
+    <motor ctrllimited="true" ctrlrange="-35 35" gear="1"/>
+  </default>
+
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.35 0.35 0.35"/>
+    <map znear="0.01"/>
+  </visual>
+
+  <asset>
+    <texture name="grid" type="2d" builtin="checker" width="512" height="512"
+             rgb1="0.19 0.2 0.22" rgb2="0.23 0.24 0.27"/>
+    <material name="grid" texture="grid" texrepeat="8 8" reflectance="0.05"/>
+  </asset>
+
+  <worldbody>
+    <geom name="floor" type="plane" pos="0 0 0" size="0 0 0.05"
+          material="grid" contype="1" conaffinity="1" condim="3"
+          friction="1.0 0.005 0.0001"/>
+
+    <!-- ============ planar floating base ============
+         MJCF allows several joints on one body, so the URDF's massless
+         base_x / base_z dummy links are unnecessary here.
+         ORDER MATTERS: the two slides must precede the hinge. A slide axis
+         is expressed in the frame left by the preceding joints, so putting
+         the hinge first would give body-fixed translation instead of the
+         world-frame translation the URDF chain produces. -->
+    <body name="Torso" pos="0 0 0">
+      <camera name="track" mode="trackcom" pos="0 -3 0" xyaxes="1 0 0 0 0 1"/>
+      <joint name="base_slide_x" type="slide" axis="1 0 0"/>
+      <joint name="base_slide_z" type="slide" axis="0 0 1"/>
+      <joint name="base_pitch_y" type="hinge" axis="0 1 0"/>
+      <inertial pos="0 0 0.24" mass="12.0" diaginertia="1.33 1.33 1.33"/>
+      <geom name="torso_geom" fromto="0 0 0  0 0 0.625" size="0.035"/>
+      <site name="Hip" pos="0 0 0" size="0.015" rgba="1 1 1 0.4"/>
+
+      <body name="LeftThigh" pos="0 0 0">
+        <joint name="LeftHip" class="leg"/>
+        <inertial pos="0 0 -0.11" mass="6.8" diaginertia="0.47 0.47 0.47"/>
+        <geom name="left_thigh_geom" fromto="0 0 0  0 0 -0.4"/>
+
+        <body name="LeftShin" pos="0 0 -0.4">
+          <joint name="LeftKnee" class="leg"/>
+          <inertial pos="0 0 -0.24" mass="3.2" diaginertia="0.2 0.2 0.2"/>
+          <geom name="left_shin_geom" fromto="0 0 0  0 0 -0.4" size="0.016"/>
+          <geom name="left_foot_geom" class="foot" pos="0 0 -0.39"/>
+          <!-- Guard y2(q) and the impact map key off this site. -->
+          <site name="LeftFoot" pos="0 0 -0.4" size="0.01" rgba="1 1 1 0.4"/>
+        </body>
+      </body>
+
+      <body name="RightThigh" pos="0 0 0">
+        <joint name="RightHip" class="leg"/>
+        <inertial pos="0 0 -0.11" mass="6.8" diaginertia="0.47 0.47 0.47"/>
+        <geom name="right_thigh_geom" fromto="0 0 0  0 0 -0.4"
+              rgba="0.42 0.47 0.56 1"/>
+
+        <body name="RightShin" pos="0 0 -0.4">
+          <joint name="RightKnee" class="leg"/>
+          <inertial pos="0 0 -0.24" mass="3.2" diaginertia="0.2 0.2 0.2"/>
+          <geom name="right_shin_geom" fromto="0 0 0  0 0 -0.4" size="0.016"
+                rgba="0.42 0.47 0.56 1"/>
+          <geom name="right_foot_geom" class="foot" pos="0 0 -0.39"/>
+          <site name="RightFoot" pos="0 0 -0.4" size="0.01" rgba="1 1 1 0.4"/>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <!-- ctrl is torque in N*m directly (gear = 1). Order matches
+       [LeftHip, LeftKnee, RightHip, RightKnee] = qvel[3:7]. -->
+  <actuator>
+    <motor name="LeftHip_motor"   joint="LeftHip"/>
+    <motor name="LeftKnee_motor"  joint="LeftKnee"/>
+    <motor name="RightHip_motor"  joint="RightHip"/>
+    <motor name="RightKnee_motor" joint="RightKnee"/>
+  </actuator>
+
+  <sensor>
+    <framepos name="left_foot_pos"  objtype="site" objname="LeftFoot"/>
+    <framepos name="right_foot_pos" objtype="site" objname="RightFoot"/>
+  </sensor>
+
+  <!-- Slight knee flexion; feet just touching z = 0. -->
+  <keyframe>
+    <key name="stand" qpos="0 0.78405326 0 0.20 -0.40 -0.20 0.40"/>
+  </keyframe>
+
+</mujoco>
