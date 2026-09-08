@@ -132,7 +132,7 @@ class Gait:
         J_st = pinocchio.getFrameJacobian(self.model, self.data, st_id,
                                         pinocchio.LOCAL_WORLD_ALIGNED)[[0, 2], :]
         qdot_e = np.zeros(7)
-        qdot_e[2:] = self._reorder(qdot_gait, self.stance)
+        qdot_e[2:] = self._reorder(qdot_gait, self.stance)[2:]
         qdot_e[:2] = -J_st[:, 2:] @ qdot_e[2:]
 
         assert np.linalg.norm(J_st @ qdot_e) < 1e-12
