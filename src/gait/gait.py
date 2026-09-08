@@ -112,7 +112,7 @@ class Gait:
         Lifts q_gait (5 DOF) into q_model (7 DOF) by pinning stance foot at origin
         """
         q_e = np.zeros(7)
-        q_e[2:] = self._reorder(q_gait, self.stance)
+        q_e[2:] = self._reorder(q_gait, self.stance)[2:]
         pinocchio.framesForwardKinematics(self.model, self.data, q_e)
         p = self.data.oMf[self._get_stance_foot_id(self.stance)].translation # type: ignore
         q_e[0] -= p[0]
