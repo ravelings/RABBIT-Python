@@ -238,6 +238,13 @@ class Gait:
         return np.triu(D) + np.triu(D, 1).T
 
     def impact_map(self, q_minus, qdot_minus):
+        """
+        Calculates the state after impact.
+
+        Returns:
+            qdot_plus: 5 DOF configuration velocity after impact
+            F_ext: Vector of external forces acting on the swing leg at impact 
+        """
         q_e = self.lift_q(q_minus)
         qdot_e = self.lift_qdot(q_e, qdot_minus)
 
@@ -250,8 +257,13 @@ class Gait:
 
         sol = np.linalg.solve(A, b)
         qdot_e_plus = sol[:7]
+        qdot_plus = self._model_to_gait(qdot_e_plus, self.stance)
         F2 = sol[7:] # impulse Ns
 
+        F_ext = D @ (qdot_e_plus - qdot_e)
+        assert np.allclose(F_ext, J_sw.T @ F2) # Eq. (3.15) VS (3.18) 
+
+        return qdot_plus, F_ext
 
 
     def fk(self, q_gait: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
