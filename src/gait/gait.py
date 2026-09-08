@@ -233,7 +233,7 @@ class Gait:
 
         sol = np.linalg.solve(A, b)
         qdot_e_plus = sol[:7]
-        F_ext = sol[7:] # impulse Ns
+        F2 = sol[7:] # impulse Ns
 
 
 
