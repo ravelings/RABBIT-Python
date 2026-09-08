@@ -8,6 +8,12 @@ from scipy.special import comb
 JOINT_ORDER = ["RightHip", "RightKnee", "LeftHip", "LeftKnee"]
 C_THETA = np.array([1, 1, 1, 0, 0])
 
+N = 5 # dim(q_gait)
+N_ACT = 4 # actuated dimensions
+
+H_0 = np.eye(N)[1:]
+H = np.vstack([H_0, C_THETA])
+
 ## Permutations
 P_LEFT = np.array([0, 1, 2, 3, 4]) # Left Stance
 P_RIGHT = np.array([0, 3, 4, 1, 2]) # Right Stance
