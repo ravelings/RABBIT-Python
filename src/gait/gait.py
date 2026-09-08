@@ -82,6 +82,17 @@ class Gait:
         targets, tau = self.build_targets()
         return self.alpha_lstsq(tau, targets, self.alpha)
 
+    def _model_to_gait(self, q_model: npt.NDArray[np.float64], stance: str):
+        """
+        Converts extended configuration (7 DOF) vector `q_model` into the 
+        gait configuration vector (5 DOF) `q_gait`
+        """
+        _, _, qt, lh, lk, rh, rk = q_model 
+        q_gait = np.array([qt, lh, lk, rh, rk])
+
+        return q_gait[P_LEFT if stance == "L" else P_RIGHT]
+
+
     def _reorder(self, q_gait: npt.NDArray[np.float64], stance: str) -> npt.NDArray[np.float64]:
         """
         Builds Pinocchio's configuration vector q from
