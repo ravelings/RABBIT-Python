@@ -382,6 +382,26 @@ class Gait:
 
         return (theta_samples - theta_plus) / dtheta
 
+    def get_alpha_1(self, q_minus: npt.NDArray[np.float64], alphas: npt.NDArray[np.float64], 
+                theta_p: float, theta_m: float, M: int=5) -> npt.NDArray[np.float64]:
+
+        A = M * (alphas[:, -1] - alphas[:, -2])
+        B = theta_m - theta_p 
+        assert abs(B) > 1e-6, "ERROR: Theta did not advance over step"
+
+        H0v = A / B
+        v = np.zeros(5)
+        ## Rebuild torso: vt = 1 - vsh - vsk
+        v[1:] = H0v
+        v[0] = 1 - H0v[0] - H0v[1]
+
+        w_plus, _ = self.impact_map(q_minus, v)
+        nu = C_THETA @ w_plus
+
+        alphas[:, 1] = alphas[:, 0] + ( B / (M * nu) ) * H_0 @ w_plus
+
+        return alphas
+
     def sweep(self, model: pinocchio.Model, data: pinocchio.Data,
             alpha: npt.NDArray[np.float64], theta_p: float, 
             theta_m: float, stance: str, N=201):
