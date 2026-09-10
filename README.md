@@ -51,10 +51,12 @@ D_e(q_e^-) && -E_2^{\top}(q_e^-) \\
 E_2(q_e^-) && 0_{2\times2}
 \end{bmatrix}
 \begin{bmatrix}
-\dot{q_e}^+ \\ F_2
+\dot{q_e}^+ \\ 
+F_2
 \end{bmatrix} =
 \begin{bmatrix}
-D_e(q_e^-)\dot{q_e}^- \\ 0_{2 \times 1}
+D_e(q_e^-)\dot{q_e}^- \\ 
+0_{2 \times 1}
 \end{bmatrix}
 $$
 
