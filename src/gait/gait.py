@@ -40,7 +40,7 @@ class Gait:
         Vector Forms:
 
             Gait Configuration Vector q_gait: [Torso wrt. Vertical, StanceHip, StanceKnee, SwingHip, SwingKnee]
-            Model Configuration Vector q_model: [Torso, RightHip, RightKnee, LeftHip, LeftKnee]
+            Model (7DOF) Configuration Vector q_model: [Base_x, Base_z, Torso, RightHip, RightKnee, LeftHip, LeftKnee]
         """
         assert init_stance == "R" or init_stance == "L", "FATAL ERROR: Invalid stance"
 
