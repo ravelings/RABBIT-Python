@@ -251,7 +251,7 @@ class Gait:
         D = self.get_D(q_e)
         J_sw = self.get_swing_jacobian(q_e, self.stance)
 
-        A = np.block([[D, J_sw.T],
+        A = np.block([[D, -J_sw.T],
                       [J_sw, np.zeros((2, 2))]])
         b = np.concatenate([D @ qdot_e, np.zeros(2)])
 
