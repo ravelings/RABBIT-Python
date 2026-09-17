@@ -6,7 +6,7 @@ from src.logger import logger
 from scipy.special import comb
 
 JOINT_ORDER = ["RightHip", "RightKnee", "LeftHip", "LeftKnee"]
-C_THETA = np.array([1, 1, 1, 0, 0])
+C_THETA = np.array([1, 1, 1, 0, 0]) # extracts the angle of the stance tibia.
 
 N = 5 # dim(q_gait)
 N_ACT = 4 # actuated dimensions
