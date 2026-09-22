@@ -101,8 +101,8 @@ class Gait:
         """
         sh, sk, wh, wk, t = q_gait
 
-        return (np.array([0., 0., t, wh, wk, sh, sk]) if stance == "R"
-            else np.array([0., 0., t, sh, sk, wh, wk]))
+        return (np.array([0., 0., t, sh, sk, wh, wk]) if stance == "R"
+            else np.array([0., 0., t, wh, wk, sh, sk]))
     def _get_stance_foot_id(self, stance: str) -> int:
         return self.model.getFrameId("RightFoot" if stance == "R" else "LeftFoot")
 
