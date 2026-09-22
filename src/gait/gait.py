@@ -91,6 +91,16 @@ class Gait:
 
         return q_gait[P_LEFT if stance == "L" else P_RIGHT]
 
+    def _unpack_q_gait(self, q_gait: npt.NDArray[np.float64]):
+        """
+        Unpacks q_gait into its named components.
+        Centralizes the index order so only this needs to change if the
+        q_gait format changes again.
+        Returns:
+            sh, sk, wh, wk, qt
+        """
+        sh, sk, wh, wk, qt = q_gait
+        return sh, sk, wh, wk, qt
 
     def _reorder(self, q_gait: npt.NDArray[np.float64], stance: str) -> npt.NDArray[np.float64]:
         """
@@ -99,7 +109,7 @@ class Gait:
 
         q[0:1] = [0.0, 0.0] due to the URDF's floating base
         """
-        sh, sk, wh, wk, t = q_gait
+        sh, sk, wh, wk, t = self._unpack_q_gait(q_gait)
 
         return (np.array([0., 0., t, sh, sk, wh, wk]) if stance == "R"
             else np.array([0., 0., t, wh, wk, sh, sk]))
@@ -269,7 +279,7 @@ class Gait:
         Computes the forward kinematics for hip positions wrt. the stance foot
         as the origin.
         """
-        sh, sk, wh, wk, qt = q_gait # not to be confused with self.q_gait
+        sh, sk, wh, wk, qt = self._unpack_q_gait(q_gait) # not to be confused with self.q_gait
 
         """
         Returns the position vector from the foot to the hip given h (hip) and knee (h)
