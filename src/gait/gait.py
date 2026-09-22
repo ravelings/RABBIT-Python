@@ -6,22 +6,22 @@ from src.logger import logger
 from scipy.special import comb
 
 JOINT_ORDER = ["RightHip", "RightKnee", "LeftHip", "LeftKnee"]
-C_THETA = np.array([1, 1, 1, 0, 0]) # extracts the angle of the stance tibia.
+C_THETA = np.array([1, 1, 0, 0, 1]) # extracts the angle of the stance tibia.
 
 N = 5 # dim(q_gait)
 N_ACT = 4 # actuated dimensions
 
-H_0 = np.eye(N)[1:]
+H_0 = np.eye(N)[:-1]
 H = np.vstack([H_0, C_THETA])
 
 ## Permutations
-P_LEFT = np.array([0, 1, 2, 3, 4]) # Left Stance
-P_RIGHT = np.array([0, 3, 4, 1, 2]) # Right Stance
-SWAP = np.array([0, 3, 4, 1, 2]) # Stance-independent swap
+P_LEFT = np.array([2, 3, 0, 1, 4]) # Left Stance
+P_RIGHT = np.array([0, 1, 2, 3, 4]) # Right Stance
+SWAP = np.array([2, 3, 0, 1, 4]) # Stance-independent swap
 
-"""
+""" 
 Builds the gait configuration vector q_gait
-[Torso wrt. Vertical, StanceHip, StanceKnee, SwingHip, SwingKnee]
+[StanceHip, StanceKnee, SwingHip, SwingKnee, Torso wrt. Vertical]
 Where all angles are relative to their parent links (except q1).
 """
 
@@ -38,8 +38,7 @@ class Gait:
             seed_alpha: [StanceHip, StanceKnee, SwingHip, SwingKnee]
 
         Vector Forms:
-
-            Gait Configuration Vector q_gait: [Torso wrt. Vertical, StanceHip, StanceKnee, SwingHip, SwingKnee]
+            Gait Configuration Vector q_gait: [StanceHip, StanceKnee, SwingHip, SwingKnee, Torso wrt. Vertical]
             Model (7DOF) Configuration Vector q_model: [Base_x, Base_z, Torso, RightHip, RightKnee, LeftHip, LeftKnee]
         """
         assert init_stance == "R" or init_stance == "L", "FATAL ERROR: Invalid stance"
@@ -69,7 +68,7 @@ class Gait:
 
         self.alpha = np.zeros((4, 6)) # Alpha takes the shape (4, 6)
         self.alpha[:, -1] = seed_alpha
-        self.alpha[:, 0] = self.q_plus[1:]
+        self.alpha[:, 0] = self.q_plus[:-1]
 
         assert abs(knee_stance) > 1e-3, "FATAL ERROR: stance knee seeded straight"   
         assert abs(knee_swing)  > 1e-3, "FATAL ERROR: swing knee seeded straight"
@@ -88,7 +87,7 @@ class Gait:
         gait configuration vector (5 DOF) `q_gait`
         """
         _, _, qt, lh, lk, rh, rk = q_model 
-        q_gait = np.array([qt, lh, lk, rh, rk])
+        q_gait = np.array([lh, lk, rh, rk, qt])
 
         return q_gait[P_LEFT if stance == "L" else P_RIGHT]
 
@@ -100,7 +99,7 @@ class Gait:
 
         q[0:1] = [0.0, 0.0] due to the URDF's floating base
         """
-        t, sh, sk, wh, wk = q_gait
+        sh, sk, wh, wk, t = q_gait
 
         return (np.array([0., 0., t, wh, wk, sh, sk]) if stance == "R"
             else np.array([0., 0., t, sh, sk, wh, wk]))
@@ -154,7 +153,7 @@ class Gait:
             ]
 
             joints_q = self.q_model[joint_idx]
-            q_arranged = np.concatenate([[vertical_q], joints_q])
+            q_arranged = np.concatenate([joints_q, [vertical_q]])
             ## Permutate relative to stance to obtain q_gait form
             q_gait = q_arranged[P_LEFT if self.stance == "L" else P_RIGHT]
 
@@ -190,7 +189,7 @@ class Gait:
         if z_hip < 0:
             qt -= np.sign(qt) * np.pi
         
-        return np.concatenate([[qt], seed_alpha])
+        return np.concatenate([seed_alpha, [qt]])
 
     def theta(self, q_gait: npt.NDArray[np.float64]) -> float:
         """
@@ -265,13 +264,12 @@ class Gait:
 
         return qdot_plus, F_ext
 
-
     def fk(self, q_gait: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
         Computes the forward kinematics for hip positions wrt. the stance foot
         as the origin.
         """
-        qt, sh, sk, wh, wk = q_gait # not to be confused with self.q_gait
+        sh, sk, wh, wk, qt = q_gait # not to be confused with self.q_gait
 
         """
         Returns the position vector from the foot to the hip given h (hip) and knee (h)
@@ -321,7 +319,7 @@ class Gait:
         """
         hip_p, sw_p = self.fk(q_gait=self.q_plus)
         hip_m, sw_m = self.fk(q_gait=self.q_minus)
-        qt_p, qt_m = self.q_plus[0], self.q_minus[0]
+        qt_p, qt_m = self.q_plus[-1], self.q_minus[-1]
         Y = np.zeros((N, 4)) 
         theta_samples = np.zeros(N)
         for i, u in enumerate(np.linspace(0.0, 1.0, N)):
@@ -331,7 +329,7 @@ class Gait:
             foot[1] += 4*clearance*u*(1-u)          # swing arc, zero at both ends
             sh, sk = self.ik(hip, np.zeros(2), qt, self.knee_sign)
             wh, wk = self.ik(hip, foot, qt, self.knee_sign)
-            q_gait = np.array([qt, sh, sk, wh, wk])
+            q_gait = np.array([sh, sk, wh, wk, qt])
             theta_samples[i] = self.theta(q_gait)
             Y[i] = [sh, sk, wh, wk]
 
@@ -392,8 +390,8 @@ class Gait:
         H0v = A / B
         v = np.zeros(5)
         ## Rebuild torso: vt = 1 - vsh - vsk
-        v[1:] = H0v
-        v[0] = 1 - H0v[0] - H0v[1]
+        v[:4] = H0v
+        v[4] = 1 - H0v[0] - H0v[1]
 
         w_plus, _ = self.impact_map(q_minus, v)
         nu = C_THETA @ w_plus
@@ -427,7 +425,7 @@ class Gait:
             b = self.bezier(alpha, tau)
             theta = theta_p + tau * (theta_m - theta_p) # rearranged for theta
             qt = theta - b[0] - b[1] # calculates torso angle 
-            q_gait = np.concatenate(([qt], b))
+            q_gait = np.concatenate((b, [qt]))
             q = self._reorder(q_gait, stance) 
             pinocchio.framesForwardKinematics(model, data, q)
             st_p = data.oMf[st_id].translation.copy()
