@@ -11,6 +11,8 @@ class GaitParams:
     theta_plus: float
     theta_minus: float
 
+    vertical_idx: int
+
     def __post_init__(self):
         self.alpha.setflags(write=False)
         self.q_plus.setflags(write=False)
