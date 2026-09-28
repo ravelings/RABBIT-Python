@@ -73,7 +73,7 @@ def lift_q(r: RobotModel,
     return q_e
 
 
-def lift_qdot(model: pinocchio.Model, data: pinocchio.Data,
+def lift_qdot(r: RobotModel,
         q_e: npt.NDArray[np.float64], qdot_gait: npt.NDArray[np.float64],
         stance: str) -> npt.NDArray[np.float64]:
     """
@@ -179,7 +179,7 @@ def get_D(r: RobotModel,
     Returns:
         Symmetrical inertia matrix D evaluated at q_model.
     """
-    D = pinocchio.crba(model, data, q_model).copy()
+    D = pinocchio.crba(r.model, r.data, q_model).copy()
     return np.triu(D) + np.triu(D, 1).T
 
 
