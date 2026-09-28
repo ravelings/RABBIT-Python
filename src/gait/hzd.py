@@ -59,8 +59,36 @@ def get_dh_dq(alpha: npt.NDArray[np.float64], theta_val: float,
     return H_0 - dhd_dtheta * dtau_dtheta
 
 
-def get_kappa1(epsilon1: npt.NDArray[np.float64]):
-    ### Partial Derivative at epsilon1
+def reduce_inertia(r: RobotModel, D: npt.NDArray[np.float64], q_s: npt.NDArray[np.float64], stance: str):
+    """
+    Reduces D_e (from Pinnochio) to the reduced gait model D_s
+
+    Args:
+        D_e: Extended Inertia Matrix
+        q_s: Reduced Configuration Vector
+    """
+    q_e = kinematics.reorder(q_s, stance)
+    J_r = kinematics.get_stance_jacobian(r, q_e, stance)[:, 2:] # [I2x2, J_r]
+    PI = PI_R if stance == "R" else PI_L 
+    T = np.vstack([-J_r, np.eye(J_r.shape[-1])]) @ PI
+
+    return T.T @ D @ T
+
+def get_gamma0(p: GaitParams, r: RobotModel, theta: float, stance: str):
+    q_s = q_on_Z(p, theta)
+    q_e = kinematics.reorder(q_s, stance)
+
+    D = dynamics.get_D(r.model, r.data, q_e)
+    D_s = reduce_inertia(r, D, q_s, stance)
+    return D_s[-1]
+
+def kappa1(p: GaitParams, r: RobotModel, theta: float,
+           stance: str):
+    """κ₁(ξ₁) from Westervelt et al., with ξ₁ ≡ θ evaluated on Z.
+
+    κ₁ = ∂θ/∂q @ [∂h/∂q; γ₀(q)]⁻¹ @ [0; 1] | Z
+    """
+    ### Partial Derivative at theta
     dtheta_dq = C_THETA
     dh_dq = get_dh_dq()
 
