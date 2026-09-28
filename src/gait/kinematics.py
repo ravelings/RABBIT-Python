@@ -50,8 +50,8 @@ def reorder(q_gait: npt.NDArray[np.float64], stance: str) -> npt.NDArray[np.floa
     """
     sh, sk, wh, wk, t = unpack_q_gait(q_gait)
 
-    return (np.array([0., 0., t, sh, sk, wh, wk]) if stance == "R"
-        else np.array([0., 0., t, wh, wk, sh, sk]))
+    return (np.array([0., 0., t, wh, wk, sh, sk, ]) if stance == "R"
+        else np.array([0., 0., t, sh, sk, wh, wk]))
 
 
 def get_stance_foot_id(model: pinocchio.Model, stance: str) -> int:
