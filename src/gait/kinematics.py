@@ -36,7 +36,7 @@ def model_to_gait(q_model: npt.NDArray[np.float64], stance: str):
     gait configuration vector (5 DOF) `q_gait`
     """
     _, _, qt, lh, lk, rh, rk = q_model
-    q_gait = np.array([lh, lk, rh, rk, qt])
+    q_gait = np.array([rh, rk, lh, lk, qt])
 
     return q_gait[P_LEFT if stance == "L" else P_RIGHT]
 
