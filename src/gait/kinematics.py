@@ -4,6 +4,8 @@ import numpy as np
 import numpy.typing as npt
 from src.logger import logger
 
+from src.gait.robotmodel import RobotModel
+
 JOINT_ORDER = ["RightHip", "RightKnee", "LeftHip", "LeftKnee"]
 
 ## Permutations
@@ -63,9 +65,13 @@ def lift_q(r: RobotModel,
     """
     Lifts q_gait (5 DOF) into q_model (7 DOF) by pinning stance foot at origin
     """
+    model = r.model
+    data = r.data
+
     q_e = np.zeros(7)
     q_e[2:] = reorder(q_gait, stance)[2:]
     pinocchio.framesForwardKinematics(model, data, q_e)
+
     p = data.oMf[get_stance_foot_id(model, stance)].translation  # type: ignore
     q_e[0] -= p[0]
     q_e[1] -= p[1]
@@ -80,6 +86,8 @@ def lift_qdot(r: RobotModel,
     Lifts qdot_gait (5 DOF) into q_model (7 DOF) by pinning stance foot at origin
     through J_st @ qdot == 0
     """
+    model = r.model 
+    data = r.data
     st_id = get_stance_foot_id(model, stance)
 
     pinocchio.computeJointJacobians(model, data, q_e)
