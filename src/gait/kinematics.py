@@ -58,7 +58,7 @@ def get_stance_foot_id(model: pinocchio.Model, stance: str) -> int:
     return model.getFrameId("RightFoot" if stance == "R" else "LeftFoot")
 
 
-def lift_q(model: pinocchio.Model, data: pinocchio.Data,
+def lift_q(r: RobotModel,
         q_gait: npt.NDArray[np.float64], stance: str) -> npt.NDArray[np.float64]:
     """
     Lifts q_gait (5 DOF) into q_model (7 DOF) by pinning stance foot at origin
@@ -150,8 +150,9 @@ def initialize_q_minus(seed_alpha: np.ndarray, L1: float, L2: float) -> npt.NDAr
     return np.concatenate([seed_alpha, [qt]])
 
 
-def get_swing_jacobian(model: pinocchio.Model, data: pinocchio.Data,
-        q_model: npt.NDArray[np.float64], stance) -> npt.NDArray[np.float64]:
+def get_swing_jacobian(r: RobotModel, q_model: npt.NDArray[np.float64], stance: str) -> npt.NDArray[np.float64]:
+    model = r.model
+    data = r.data   
     sw_id = model.getFrameId("LeftFoot" if stance == "R" else "RightFoot")
     pinocchio.computeJointJacobians(model, data, q_model)
     J_sw = pinocchio.getFrameJacobian(model, data, sw_id,
