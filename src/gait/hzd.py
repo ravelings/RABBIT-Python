@@ -53,8 +53,18 @@ def get_dh_dq(alpha: npt.NDArray[np.float64], theta_val: float,
     tau = calculate_tau(theta_val, q_plus, q_minus)
     assert isinstance(tau, float)
 
-    dtau_dtheta = 1 / (theta(q_minus) - theta(q_plus))
-    dhd_dtheta = bezier_curve.bezier_derivative(alpha, tau)
+    hd = bezier_curve.bezier(p.alpha, tau)
+
+    return H_INV @ np.append(hd, theta)
+
+def get_dh_dq(p: GaitParams, theta: float):
+    """∂h/∂q (θ), shape (n-1, n)."""
+    tau = calculate_tau(theta, p.q_plus, p.q_minus)
+    assert isinstance(tau, float)
+    dtheta_dq = C_THETA
+
+    dtau_dtheta = 1 / (p.theta_minus - p.theta_plus)
+    db_dtau = bezier_curve.bezier_derivative(p.alpha, tau) # equi to ∂hd/∂τ
 
     return H_0 - dhd_dtheta * dtau_dtheta
 
