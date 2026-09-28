@@ -47,10 +47,13 @@ def calculate_tau(theta_samples: npt.NDArray[np.float64] | float,
 
     return (theta_samples - theta_plus) / dtheta
 
+def q_on_Z(p: GaitParams, theta: float):
+    """
+    Extracts q from ξ₁ from Westervelt et al., with ξ₁ ≡ θ evaluated on Z.
 
-def get_dh_dq(alpha: npt.NDArray[np.float64], theta_val: float,
-        q_plus: npt.NDArray[np.float64], q_minus: npt.NDArray[np.float64]):
-    tau = calculate_tau(theta_val, q_plus, q_minus)
+    q = H⁻¹[hd(ξ₁); ξ₁]
+    """
+    tau = calculate_tau(theta, p.q_plus, p.q_minus) 
     assert isinstance(tau, float)
 
     hd = bezier_curve.bezier(p.alpha, tau)
