@@ -37,8 +37,8 @@ def bezier_derivative(alpha: npt.NDArray[np.float64], tau: float):
     M * sum from k=0 to M-1: (alpha_k+1 - alpha_k) * comb(M-1;k) * tau^k * (1-tau)^(M-1-k)
     """
     M = alpha.shape[1] - 1  # 5
-    B = np.array([(alpha[k+1] - alpha[k]) * comb(M-1, k) * tau**k * (1 - tau)**(M-1-k) for k in range(M-1)])
-    return M @ B
+    B = np.array([(alpha[:, k+1] - alpha[:, k]) * comb(M-1, k) * tau**k * (1 - tau)**(M-1-k) for k in range(M)])
+    return M * B.sum(axis=0)
 
 
 def alpha_lstsq(tau: npt.NDArray[np.float64],
