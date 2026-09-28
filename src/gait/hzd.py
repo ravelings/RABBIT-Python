@@ -90,10 +90,84 @@ def kappa1(p: GaitParams, r: RobotModel, theta: float,
     """
     ### Partial Derivative at theta
     dtheta_dq = C_THETA
-    dh_dq = get_dh_dq()
+    dh_dq = get_dh_dq(p, theta)
+    
+    gamma0 = get_gamma0(p, r, theta, stance)
 
+    A = np.vstack([dh_dq, gamma0])
+    B = np.eye(A.shape[0])[-1]
 
-def impact_map(model: pinocchio.Model, data: pinocchio.Data,
+    return float(dtheta_dq @ np.linalg.solve(A, B))
+    
+def kappa2(p: GaitParams, r: RobotModel, theta: float,
+        stance: str):
+    """
+    κ₂(ξ₁) from Westervelt et al., with ξ₁ ≡ θ evaluated on Z.
+
+    κ₂ = ∂V/∂q_N = transpose(e_N) @ ∇V(q) | Z ,where ∇ V is the generalized gravity matrix
+    """
+    q = q_on_Z(p, theta)
+    q_e = kinematics.lift_q(r, q, stance)
+    G = pinocchio.computeGeneralizedGravity(r.model, r.data, q_e)
+
+    return float(-G[p.vertical_idx])
+
+def V_zero(p: GaitParams, r: RobotModel, stance: str, n_pts: int = 500):
+    """
+    V_zero over [θ⁺, θ⁻], from eq (5.70).
+    """
+    xi = np.linspace(p.theta_plus, p.theta_minus, n_pts)
+    k1 = np.array([kappa1(p, r, theta, stance) for theta in xi])
+    k2 = np.array([kappa2(p, r, theta, stance) for theta in xi])
+
+    if np.any(np.abs(k1) < 1e-8):
+        raise ValueError("κ₁ vanishes on [θ⁺, θ⁻]: zero dynamics singular")
+
+    V = -cumulative_trapezoid(k2 / k1, xi, initial=0.0)
+    assert isinstance(V, np.ndarray)
+
+    return V, xi
+
+def get_q_0(p: GaitParams, state: str):
+    """
+    Obtains q_0⁻ by Hq_0⁻ = [a_M; θ⁻]
+    Args:
+        state: "plus" or "minus"
+    """
+    theta = p.theta_minus if state == "minus" else p.theta_plus
+    B = np.append(p.alpha[:, -1], p.theta_minus)
+
+    return np.linalg.solve(H, B)
+
+def get_delta0(p: GaitParams, r: RobotModel, stance: str) -> float:
+    """
+    Calculates δ₀ = γ₀(q₀+) @ ∆(q₀-)λqdot
+    """
+    q_minus = get_q_0(p, "minus")
+    theta_minus = theta(q_minus)
+    dh_dq = get_dh_dq(p, theta_minus)
+    gamma0_minus = get_gamma0(p, r, theta_minus, stance)
+    A = np.vstack([dh_dq, gamma0_minus])
+    lam_q = np.linalg.solve(A, np.eye(A.shape[0])[:, -1])
+
+    theta_plus = theta(get_q_0(p, "plus"))
+    gamma_plus = get_gamma0(p, r, theta_plus, stance)
+    delta_q_lam_q, _ = impact_map(r, q_minus, lam_q, stance)
+
+    return gamma_plus @ delta_q_lam_q
+
+def verify_stability(p: GaitParams, r: RobotModel, V: npt.NDArray[np.float64], xi: npt.NDArray[np.float64], stance: str):
+    delta0_2 = (get_delta0(p, r, stance))** 2
+
+    print(f" Delta0 = {delta0_2:.4f}")
+    print(f"Condition 1: 0< delta0^2 < 1: {delta0_2 > 1e-8 and delta0_2 < 1.00}")
+
+    sum = ( (delta0_2) / (1 - delta0_2) ) * V[-1] + V.max()
+
+    print(f" sum = {sum:.4f}")
+    print(f"Nontrivial Periodic Orbit: sum < 0: {sum < 1e-8}")
+          
+def impact_map(r: RobotModel ,
         q_minus: npt.NDArray[np.float64], qdot_minus: npt.NDArray[np.float64], stance: str):
     """
     Calculates the state after impact.
