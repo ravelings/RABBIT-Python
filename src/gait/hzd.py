@@ -14,6 +14,12 @@ N_ACT = 4  # actuated dimensions
 H_0 = np.eye(N)[:-1]
 H = np.vstack([H_0, C_THETA])
 
+## qr = PI_* @ q_gait, where qr = [Torso, RightHip, RightKnee, LeftHip, LeftKnee]
+## and q_gait = [StanceHip, StanceKnee, SwingHip, SwingKnee, Torso] (see unpack_q_gait)
+PI_R = np.eye(N)[[4, 0, 1, 2, 3]]  # Right stance: stance legs -> Right slots
+PI_L = np.eye(N)[[4, 2, 3, 0, 1]]  # Left stance: stance legs -> Left slots
+H_INV = np.linalg.inv(H)
+
 
 def theta(q_gait: npt.NDArray[np.float64]) -> float:
     """
