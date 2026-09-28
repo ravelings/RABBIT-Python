@@ -2,9 +2,13 @@
 import pinocchio
 import numpy as np
 import numpy.typing as npt
+from scipy.integrate import cumulative_trapezoid
 
 from src.gait import kinematics
 from src.gait import bezier as bezier_curve
+from src.gait import dynamics
+from src.gait.gaitparams import GaitParams
+from src.gait.robotmodel import RobotModel
 
 C_THETA = np.array([1, 1, 0, 0, 1])  # extracts the angle of the stance tibia.
 
@@ -30,7 +34,6 @@ def theta(q_gait: npt.NDArray[np.float64]) -> float:
     where c voids swing leg angles.
     """
     return float(q_gait @ C_THETA)
-
 
 def calculate_tau(theta_samples: npt.NDArray[np.float64] | float,
         q_plus: npt.NDArray[np.float64], q_minus: npt.NDArray[np.float64]):
@@ -69,8 +72,7 @@ def get_dh_dq(p: GaitParams, theta: float):
     dtau_dtheta = 1 / (p.theta_minus - p.theta_plus)
     db_dtau = bezier_curve.bezier_derivative(p.alpha, tau) # equi to ∂hd/∂τ
 
-    return H_0 - dhd_dtheta * dtau_dtheta
-
+    return H_0 - dtau_dtheta * np.outer(db_dtau, dtheta_dq)
 
 def reduce_inertia(r: RobotModel, D: npt.NDArray[np.float64], q_s: npt.NDArray[np.float64], stance: str):
     """
@@ -189,11 +191,13 @@ def impact_map(r: RobotModel ,
         qdot_plus: 5 DOF configuration velocity after impact
         F_ext: Vector of external forces acting on the swing leg at impact
     """
-    q_e = kinematics.lift_q(model, data, q_minus, stance)
-    qdot_e = kinematics.lift_qdot(model, data, q_e, qdot_minus, stance)
+    model = r.model 
+    data = r.data
+    q_e = kinematics.lift_q(r, q_minus, stance)
+    qdot_e = kinematics.lift_qdot(r, q_e, qdot_minus, stance)
 
-    D = kinematics.get_D(model, data, q_e)
-    J_sw = kinematics.get_swing_jacobian(model, data, q_e, stance)
+    D = kinematics.get_D(r, q_e)
+    J_sw = kinematics.get_swing_jacobian(r, q_e, stance)
 
     A = np.block([[D, -J_sw.T],
                   [J_sw, np.zeros((2, 2))]])
@@ -209,8 +213,7 @@ def impact_map(r: RobotModel ,
 
     return qdot_plus, F_ext
 
-
-def get_alpha_1(model: pinocchio.Model, data: pinocchio.Data,
+def get_alpha_1(r: RobotModel,
         q_minus: npt.NDArray[np.float64], alphas: npt.NDArray[np.float64],
         theta_p: float, theta_m: float, stance: str, M: int = 5) -> npt.NDArray[np.float64]:
 
@@ -224,13 +227,12 @@ def get_alpha_1(model: pinocchio.Model, data: pinocchio.Data,
     v[:4] = H0v
     v[4] = 1 - H0v[0] - H0v[1]
 
-    w_plus, _ = impact_map(model, data, q_minus, v, stance)
+    w_plus, _ = impact_map(r, q_minus, v, stance)
     nu = C_THETA @ w_plus
 
     alphas[:, 1] = alphas[:, 0] + (B / (M * nu)) * H_0 @ w_plus
 
     return alphas
-
 
 def build_targets(q_plus: npt.NDArray[np.float64], q_minus: npt.NDArray[np.float64],
         knee_sign, L1: float, L2: float,
@@ -256,6 +258,8 @@ def build_targets(q_plus: npt.NDArray[np.float64], q_minus: npt.NDArray[np.float
         Y[i] = [sh, sk, wh, wk]
 
     tau = calculate_tau(theta_samples, q_plus, q_minus)
+
+    assert isinstance(tau, np.ndarray)
 
     return Y, tau
 
