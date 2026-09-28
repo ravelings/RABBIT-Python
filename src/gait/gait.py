@@ -7,6 +7,7 @@ from src.gait import kinematics
 from src.gait import bezier
 from src.gait import hzd
 from src.gait.gaitparams import GaitParams
+from src.gait.robotmodel import RobotModel
 
 """
 Builds the gait configuration vector q_gait
@@ -27,12 +28,13 @@ class Gait:
 
         Vector Forms:
             Gait Configuration Vector q_gait: [StanceHip, StanceKnee, SwingHip, SwingKnee, Torso wrt. Vertical]
-            Model (7DOF) Configuration Vector q_model: [Base_x, Base_z, Torso, RightHip, RightKnee, LeftHip, LeftKnee]
+            Model (7DOF) Configuration Vector q_model: [Base_x, Base_z, Torso, LeftHip, LeftKnee, RightHip, RightKnee]
         """
         assert init_stance == "R" or init_stance == "L", "FATAL ERROR: Invalid stance"
 
         self.model = model
         self.data = model.createData()
+        self.robot_model = RobotModel(self.model, self.data)
         ## Store L1 and L2
         assert model.jointPlacements is not None
 
@@ -67,12 +69,22 @@ class Gait:
         targets, tau = hzd.build_targets(q_plus, q_minus, self.knee_sign, self.L1, self.L2)
         alpha = bezier.alpha_lstsq(tau, targets, alpha)
 
+        ### Misc Init
+        base_pitch_y_id = model.getJointId("base_pitch_y")
+        assert model.joints is not None
+        vertical_idx = model.joints[base_pitch_y_id].idx_q
+
         self.params = GaitParams(
             alpha=alpha,
             q_plus=q_plus,
             q_minus=q_minus,
             theta_plus=hzd.theta(q_plus),
             theta_minus=hzd.theta(q_minus),
+            vertical_idx=vertical_idx
         )
+
+    def poncare(self):
+        V_zero, xi = hzd.V_zero(self.params, self.robot_model, self.stance)
+        hzd.verify_stability(self.params, self.robot_model, V_zero, xi, self.stance)
 
     
