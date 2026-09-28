@@ -159,8 +159,18 @@ def get_swing_jacobian(model: pinocchio.Model, data: pinocchio.Data,
     assert np.linalg.matrix_rank(J_sw) == 2
     return J_sw
 
+def get_stance_jacobian(r: RobotModel, q_model: npt.NDArray[np.float64], stance: str) -> npt.NDArray[np.float64]:
+    model = r.model
+    data = r.data
+    st_id = model.getFrameId("RightFoot" if stance == "R" else "LeftFoot")
+    pinocchio.computeJointJacobians(model, data, q_model)
+    J_st = pinocchio.getFrameJacobian(model, data, st_id,
+                                pinocchio.LOCAL_WORLD_ALIGNED)[[0, 2], :]
+    assert np.linalg.matrix_rank(J_st) == 2
+    return J_st
 
-def get_D(model: pinocchio.Model, data: pinocchio.Data,
+
+def get_D(r: RobotModel,
         q_model: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     """
     Args:
