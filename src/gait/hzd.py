@@ -88,10 +88,7 @@ def reduce_inertia(r: RobotModel, D: npt.NDArray[np.float64], q_s: npt.NDArray[n
         D_e: Extended Inertia Matrix
         q_s: Reduced Configuration Vector
     """
-    q_e = kinematics.reorder(q_s, stance)
-    J_r = kinematics.get_stance_jacobian(r, q_e, stance)[:, 2:] # [I2x2, J_r]
-    PI = PI_R if stance == "R" else PI_L 
-    T = np.vstack([-J_r, np.eye(J_r.shape[-1])]) @ PI
+    T = constraint_map(r, q_s, stance)
 
     return T.T @ D @ T
 
