@@ -68,6 +68,8 @@ class Gait:
 
         targets, tau = hzd.build_targets(q_plus, q_minus, self.knee_sign, self.L1, self.L2)
         alpha = bezier.alpha_lstsq(tau, targets, alpha)
+        alpha_new = hzd.get_alpha_1(self.robot_model, q_minus, alpha, theta_p, theta_m, self.stance)
+        assert alpha.shape == alpha_new.shape
 
         ### Misc Init
         base_pitch_y_id = model.getJointId("base_pitch_y")
