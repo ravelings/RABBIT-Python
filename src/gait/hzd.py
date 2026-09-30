@@ -172,8 +172,9 @@ def get_delta0(p: GaitParams, r: RobotModel, stance: str) -> float:
     A = np.vstack([dh_dq, gamma0_minus])
     lam_q = np.linalg.solve(A, np.eye(A.shape[0])[:, -1])
 
+    new_stance = "L" if stance == "R" else "R" # Stance after impact
     theta_plus = theta(get_q_0(p, "plus"))
-    gamma_plus = get_gamma0(p, r, theta_plus, stance)
+    gamma_plus = get_gamma0(p, r, theta_plus, new_stance)
     delta_q_lam_q, _ = impact_map(r, q_minus, lam_q, stance)
 
     return gamma_plus @ delta_q_lam_q
