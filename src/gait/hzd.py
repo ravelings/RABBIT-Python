@@ -178,6 +178,70 @@ def get_delta0(p: GaitParams, r: RobotModel, stance: str) -> float:
 
     return gamma_plus @ delta_q_lam_q
 
+def get_zeta_minus(V_zero: float, delta_0: float):
+    """
+    Calculates ζ₂- = -V₀ / (1 - δ₀^2)
+    Args:
+        V_zero: V₀ at θ-
+        delta_0: δ₀
+    """
+    delta_squared = delta_0 ** 2
+
+    assert (1 - delta_squared) < 1e-8
+
+    zeta_minus = - (V_zero) / (1 - delta_squared)
+    print(f"Zeta_minus: {zeta_minus:.4f} > 0: {zeta_minus > 0.00}")
+
+    return zeta_minus
+
+def get_zeta_plus(V_zero: float, zeta_minus: float):
+    """
+    Calculates ζ₂+ = ζ₂- + V₀(θ-)
+    Args:
+        V_zero: V₀ at θ-
+        delta_0: δ₀
+    """
+    return zeta_minus + V_zero
+
+def get_period(p: GaitParams, r: RobotModel, V_zero: npt.NDArray[np.float64], 
+               xi: npt.NDArray[np.float64], stance: str):
+    """
+    Calculates the gait period
+    Args:
+        p (GaitParams): GaitParams
+        r (RobotModel): RobotModel
+        V_zero (ndarray): Array of V_zero values sampled from xi from V_zero function
+        xi (ndarray): Array of samples from V_zero function
+    Returns:
+        T (ndarray): Period of the gait at every endpoint xi
+        xi (ndarray): The array of samples T is taken from
+    """
+    assert V_zero.shape == xi.shape, "Error, shape mismatch between V_zero and xi"
+    assert abs(V_zero[0] < 1e-8), "V_zero(θ⁺) should be 0; is xi[0] = θ⁺? "
+
+    k1 = np.array([kappa1(p, r, theta, stance) for theta in xi])
+    if np.any(np.abs(k1) < 1e-8):
+        raise ValueError("κ₁ vanishes on [θ⁺, θ⁻]: zero dynamics singular")
+    
+    delta_0 = get_delta0(p, r, stance)
+    """
+    if delta_0**2 >= 1:
+        raise ValueError(f"δ_zero² = {delta_0**2:.4f} ≥ 1: no stable periodic orbit")
+    """
+    zeta_minus = get_zeta_minus(V_zero[-1], delta_0)
+    zeta_plus = get_zeta_plus(V_zero[-1], zeta_minus)
+
+    radicand = 2.0 * (zeta_plus - V_zero)
+    if np.any(radicand <= 0):
+        i = np.argmin(radicand)
+        raise ValueError(f"ξ₂² ≤ 0 at θ = {xi[i]:.4f}: robot stalls mid-step")
+
+    integrand = 1.0 / np.abs(k1 * np.sqrt(radicand))
+
+    T = cumulative_trapezoid(integrand, xi, initial=0.0)
+
+    return T, xi
+
 def verify_stability(p: GaitParams, r: RobotModel, V: npt.NDArray[np.float64], xi: npt.NDArray[np.float64], stance: str):
     delta0_2 = (get_delta0(p, r, stance))** 2
 
