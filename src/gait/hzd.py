@@ -130,8 +130,8 @@ def kappa2(p: GaitParams, r: RobotModel, theta: float,
     q = q_on_Z(p, theta)
     q_e = kinematics.lift_q(r, q, stance)
     G = pinocchio.computeGeneralizedGravity(r.model, r.data, q_e)
-
-    return float(-G[p.vertical_idx])
+    T = constraint_map(r, q, stance)
+    return float(-(T.T @ G)[-1])
 
 def V_zero(p: GaitParams, r: RobotModel, stance: str, n_pts: int = 500):
     """
