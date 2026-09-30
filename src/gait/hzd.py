@@ -75,6 +75,7 @@ def get_dh_dq(p: GaitParams, theta: float):
     return H_0 - dtau_dtheta * np.outer(db_dtau, dtheta_dq)
 
 def constraint_map(r: RobotModel, q_s: npt.NDArray[np.float64], stance: str):
+    """T such that q̇_e = T q̇_s (stance foot pinned)."""
     q_e = kinematics.reorder(q_s, stance)
     J_r = kinematics.get_stance_jacobian(r, q_e, stance)[:, 2:] # [I2x2, J_r]
     PI = PI_R if stance == "R" else PI_L 
