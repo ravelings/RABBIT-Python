@@ -74,7 +74,7 @@ def lift_q(r: RobotModel,
 
     p = data.oMf[get_stance_foot_id(model, stance)].translation  # type: ignore
     q_e[0] -= p[0]
-    q_e[1] -= p[1]
+    q_e[1] -= p[2]
     pinocchio.framesForwardKinematics(model, data, q_e)
     return q_e
 
