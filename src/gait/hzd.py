@@ -259,8 +259,8 @@ def impact_map(r: RobotModel ,
     Calculates the state after impact.
 
     Returns:
-        qdot_plus: 5 DOF configuration velocity after impact
-        F_ext: Vector of external forces acting on the swing leg at impact
+        qdot_plus (ndarray): 5 DOF configuration velocity after impact (RELABELLED/SWAPPED)
+        F_ext (ndarray): Vector of external forces acting on the swing leg at impact
     """
     model = r.model 
     data = r.data
