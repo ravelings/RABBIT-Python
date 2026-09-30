@@ -52,6 +52,8 @@ class Gait:
         self.q_gait = kinematics.build_gait_q(self.model, self.q_model, self.stance)
         q_minus = kinematics.initialize_q_minus(seed_alpha, self.L1, self.L2)
         q_plus = q_minus[kinematics.SWAP]
+        theta_p = hzd.theta(q_plus)
+        theta_m = hzd.theta(q_minus)
 
         knee_stance, knee_swing = seed_alpha[1], seed_alpha[3]
 
