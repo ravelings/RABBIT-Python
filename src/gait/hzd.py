@@ -154,7 +154,7 @@ def get_q_0(p: GaitParams, state: str):
     """
     if state == "minus":
         B = np.append(p.alpha[:, -1], p.theta_minus)
-    if state == "plus":
+    elif state == "plus":
         B = np.append(p.alpha[:, 0], p.theta_plus)
     else:
         raise ValueError(f"state must be either 'plus' or 'minus', got {state!r}")
