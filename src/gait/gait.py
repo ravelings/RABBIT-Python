@@ -79,11 +79,11 @@ class Gait:
         vertical_idx = model.joints[base_pitch_y_id].idx_q
 
         self.params = GaitParams(
-            alpha=alpha,
+            alpha=alpha_new,
             q_plus=q_plus,
             q_minus=q_minus,
-            theta_plus=hzd.theta(q_plus),
-            theta_minus=hzd.theta(q_minus),
+            theta_plus=theta_p,
+            theta_minus=theta_m,
             vertical_idx=vertical_idx
         )
 
