@@ -149,8 +149,12 @@ def get_q_0(p: GaitParams, state: str):
     Args:
         state: "plus" or "minus"
     """
-    theta = p.theta_minus if state == "minus" else p.theta_plus
-    B = np.append(p.alpha[:, -1], p.theta_minus)
+    if state == "minus":
+        B = np.append(p.alpha[:, -1], p.theta_minus)
+    if state == "plus":
+        B = np.append(p.alpha[:, 0], p.theta_plus)
+    else:
+        raise ValueError(f"state must be either 'plus' or 'minus', got {state!r}")
 
     return np.linalg.solve(H, B)
 
