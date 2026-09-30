@@ -90,5 +90,8 @@ class Gait:
     def poncare(self):
         V_zero, xi = hzd.V_zero(self.params, self.robot_model, self.stance)
         hzd.verify_stability(self.params, self.robot_model, V_zero, xi, self.stance)
+        T, _ = hzd.get_period(self.params, self.robot_model, V_zero, xi, self.stance)
+
+        print(f"Period of the gait: {T[-1]:.4f}")
 
     
