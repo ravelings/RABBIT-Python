@@ -187,7 +187,7 @@ def get_zeta_minus(V_zero: float, delta_0: float):
     """
     delta_squared = delta_0 ** 2
 
-    assert (1 - delta_squared) < 1e-8
+    assert abs(1 - delta_squared) > 1e-8
 
     zeta_minus = - (V_zero) / (1 - delta_squared)
     print(f"Zeta_minus: {zeta_minus:.4f} > 0: {zeta_minus > 0.00}")
