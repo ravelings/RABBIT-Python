@@ -277,12 +277,13 @@ def impact_map(r: RobotModel ,
     sol = np.linalg.solve(A, b)
     qdot_e_plus = sol[:7]
     qdot_plus = kinematics.model_to_gait(qdot_e_plus, stance)
+    qdot_plus_swapped = qdot_plus[kinematics.SWAP]
     F2 = sol[7:]  # impulse Ns
 
     F_ext = D @ (qdot_e_plus - qdot_e)
     assert np.allclose(F_ext, J_sw.T @ F2)  # Eq. (3.15) VS (3.18)
 
-    return qdot_plus, F_ext
+    return qdot_plus_swapped, F_ext
 
 def get_alpha_1(r: RobotModel,
         q_minus: npt.NDArray[np.float64], alphas: npt.NDArray[np.float64],
