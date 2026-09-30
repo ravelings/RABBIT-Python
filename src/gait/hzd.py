@@ -74,6 +74,12 @@ def get_dh_dq(p: GaitParams, theta: float):
 
     return H_0 - dtau_dtheta * np.outer(db_dtau, dtheta_dq)
 
+def constraint_map(r: RobotModel, q_s: npt.NDArray[np.float64], stance: str):
+    q_e = kinematics.reorder(q_s, stance)
+    J_r = kinematics.get_stance_jacobian(r, q_e, stance)[:, 2:] # [I2x2, J_r]
+    PI = PI_R if stance == "R" else PI_L 
+    return np.vstack([-J_r, np.eye(J_r.shape[-1])]) @ PI
+
 def reduce_inertia(r: RobotModel, D: npt.NDArray[np.float64], q_s: npt.NDArray[np.float64], stance: str):
     """
     Reduces D_e (from Pinnochio) to the reduced gait model D_s
